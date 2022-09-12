@@ -1,20 +1,126 @@
-import pprint
+from abc import abstractmethod, ABC
 from random import randrange, choice
+import pprint
+import logging
 
-DIM = 10
-
-
-class Battleship:
-    squares = 5
+logging.basicConfig(level=logging.INFO)
 
 
-class Destroyer:
-    squares = 4
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __hash__(self):
+        return hash((self.x, self.y))
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
 
 
-class MyGrid:
+class Ship(ABC):
+
+    def __init__(self, size):
+        self.squares = size
+        self.points = set()
+        self.health_check = size
+
+    def hit(self, x, y):
+        if Point(x, y) in self.points:
+            self.health_check -= 1
+            return True
+
+        return False
+
+    def is_ship_still_alive(self):
+        return self.health_check != 0
+
+    def is_collision(self, ship):
+        return len(self.points.intersection(ship.points)) > 0
+
+    def move(self, x, y, is_horizontal):
+        dx = 1 if is_horizontal else 0
+        dy = 0 if is_horizontal else 1
+
+        for i in range(self.squares):
+            self.points.add(Point(x + i * dx, y + i * dy))
+
+    def undock(self):
+        self.points.clear()
+
+    @abstractmethod
+    def bye_bye(self):
+        pass
+
+
+class Cruiser(Ship):
+
     def __init__(self):
-        self.matrix = [[0] * DIM for _ in range(DIM)]
+        super(Cruiser, self).__init__(3)
+
+    def bye_bye(self):
+        return "Cruiser is down !"
+
+
+class Battleship(Ship):
+
+    def __init__(self):
+        super(Battleship, self).__init__(5)
+
+    def bye_bye(self):
+        return "Battleship is down !"
+
+
+class Destroyer(Ship):
+
+    def __init__(self):
+        super(Destroyer, self).__init__(4)
+
+    def bye_bye(self):
+        return "Destroyer is down !"
+
+
+class Ocean:
+
+    def __init__(self, size):
+        self.size = size
+        self.ships = []
+
+    def attack(self, x, y):
+        for ship in self.ships:
+            if ship.hit(x, y):
+                if not ship.is_ship_still_alive():
+                    logging.info(ship.bye_bye())
+                return True
+
+        return False
+
+    def add_ship(self, ship, x, y, is_horizontal):
+
+        if is_horizontal and x + ship.squares >= self.size:
+            logging.debug("No place for the ship horizontally: {} {}".format(x, y))
+            return False
+
+        if not is_horizontal and y + ship.squares >= self.size:
+            logging.debug("No place for the ship vertically: {} {}".format(x, y))
+            return False
+
+        ship.move(x, y, is_horizontal)
+
+        for other_ships in self.ships:
+            if other_ships.is_collision(ship):
+                logging.debug("Cannot add overlapping ship, undocking")
+                ship.undock()
+                return False
+
+        self.ships.append(ship)
+
+        return True
+
+
+class Grid:
+    def __init__(self, size):
+        self.matrix = [[0] * size for _ in range(size)]
 
     def hit(self, x, y):
         self.matrix[y][x] = 1
@@ -26,94 +132,51 @@ class MyGrid:
         pprint.pprint(self.matrix)
 
 
-class EnemyGrid:
-    def __init__(self):
-        self.matrix = [[0] * DIM for _ in range(DIM)]
-
-    def add_ship_horizontally(self, ship, x, y):
-        if x + ship.squares >= DIM:
-            return self.add_ship(ship)
-
-        for dx in range(ship.squares):
-            if self.matrix[y][x + dx] == 1:
-                return False
-
-        for dx in range(ship.squares):
-            self.matrix[y][x + dx] = 1
-
-        return True
-
-    def add_ship_vertically(self, ship, x, y):
-        if y + ship.squares >= DIM:
-            return self.add_ship(ship)
-
-        for dy in range(ship.squares):
-            if self.matrix[y + dy][x] == 1:
-                return False
-
-        for dy in range(ship.squares):
-            self.matrix[y + dy][x] = 1
-
-    def add_ship(self, ship):
-        x = randrange(DIM)
-        y = randrange(DIM)
-        horizontal = choice([True, False])
-
-        if horizontal:
-            return self.add_ship_horizontally(ship, x, y)
-        else:
-            return self.add_ship_vertically(ship, x, y)
-
-    def hit(self, x, y):
-        if x > DIM or y > DIM:
-            return False
-
-        if self.matrix[y][x] == 1:
-            self.matrix[y][x] = -1
-            return True
-
-        return False
-
-    def is_over(self):
-        if not any(1 in x for x in self.matrix):
-            return True
-        return False
-
-    def print(self):
-        pprint.pprint(self.matrix)
-
-
 class Game:
-    enemy = EnemyGrid()
-    my_grid = MyGrid()
+
+    def __init__(self, size):
+        self.size = size
+        self.ocean = Ocean(size)
+        self.grid = Grid(size)
+
+    def add_ship_randomly(self, ship):
+        retries = 10
+        for i in range(retries):
+            x = randrange(self.size)
+            y = randrange(self.size)
+            is_horizontal = choice([True, False])
+            if self.ocean.add_ship(ship, x, y, is_horizontal):
+                logging.debug("Ship moved at {}, {}".format(x, y))
+                return True
+
+        logging.warning("Cannot add ship after {} retries".format(retries))
+        return False
 
     def start(self):
-        #todo: check if cannot be added
-        self.enemy.add_ship(Destroyer())
-        self.enemy.add_ship(Destroyer())
-        self.enemy.add_ship(Battleship())
+        return self.add_ship_randomly(Destroyer()) \
+               and self.add_ship_randomly(Destroyer()) \
+               and self.add_ship_randomly(Battleship())
 
     def hit(self, x, y):
-        hit = self.enemy.hit(x, y)
-
-        if hit:
-            print("Yeah !!")
-            self.my_grid.hit(x, y)
-
-            if self.enemy.is_over():
-                print("You won, congratulation !")
+        if self.ocean.attack(x, y):
+            print("Hit !")
+            self.grid.hit(x, y)
         else:
-            print("Not this time !!")
-            self.my_grid.miss(x, y)
+            print("Miss !")
+            self.grid.miss(x, y)
 
-        self.my_grid.print()
+        self.grid.print()
 
 
 if __name__ == '__main__':
-    g = Game()
-    g.start()
-    while True:
+    grid_size = 10
+    g = Game(grid_size)
+    started = g.start()
+    if not started:
+        logging.warning("Terminated")
+
+    while started:
         var = input("Please enter XY or end to finish: ")
         g.hit(int(var[0]), int(var[1]))
         if var == 'end':
-            break
+            started = False
