@@ -36,7 +36,7 @@ class Ship(ABC):
         return self.health_check != 0
 
     def is_collision(self, ship):
-        return len(self.points.intersection(ship.points)) > 0
+        return bool(self.points & ship.points)
 
     def move(self, x, y, is_horizontal):
         dx = 1 if is_horizontal else 0
@@ -56,7 +56,7 @@ class Ship(ABC):
 class Cruiser(Ship):
 
     def __init__(self):
-        super(Cruiser, self).__init__(3)
+        super().__init__(3)
 
     def bye_bye(self):
         return "Cruiser is down !"
@@ -65,7 +65,7 @@ class Cruiser(Ship):
 class Battleship(Ship):
 
     def __init__(self):
-        super(Battleship, self).__init__(5)
+        super().__init__(5)
 
     def bye_bye(self):
         return "Battleship is down !"
@@ -74,7 +74,7 @@ class Battleship(Ship):
 class Destroyer(Ship):
 
     def __init__(self):
-        super(Destroyer, self).__init__(4)
+        super().__init__(4)
 
     def bye_bye(self):
         return "Destroyer is down !"
