@@ -7,86 +7,86 @@ logging.basicConfig(level=logging.INFO)
 
 
 class Point:
-    def __init__(self, x, y):
+    def __init__(self, x: int, y: int) -> None:
         self.x = x
         self.y = y
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.x, self.y))
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self.x == other.x and self.y == other.y
 
 
 class Ship(ABC):
 
-    def __init__(self, size):
+    def __init__(self, size: int) -> None:
         self.squares = size
         self.points = set()
         self.health_check = size
 
-    def hit(self, x, y):
+    def hit(self, x: int, y: int) -> bool:
         if Point(x, y) in self.points:
             self.health_check -= 1
             return True
 
         return False
 
-    def is_ship_still_alive(self):
+    def is_ship_still_alive(self) -> bool:
         return self.health_check != 0
 
-    def is_collision(self, ship):
+    def is_collision(self, ship: int) -> bool:
         return bool(self.points & ship.points)
 
-    def move(self, x, y, is_horizontal):
+    def move(self, x: int, y: int, is_horizontal: bool) -> None:
         dx = 1 if is_horizontal else 0
         dy = 0 if is_horizontal else 1
 
         for i in range(self.squares):
             self.points.add(Point(x + i * dx, y + i * dy))
 
-    def undock(self):
+    def undock(self) -> None:
         self.points.clear()
 
     @abstractmethod
-    def bye_bye(self):
+    def bye_bye(self) -> str:
         pass
 
 
 class Cruiser(Ship):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(3)
 
-    def bye_bye(self):
+    def bye_bye(self) -> str:
         return "Cruiser is down !"
 
 
 class Battleship(Ship):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(5)
 
-    def bye_bye(self):
+    def bye_bye(self) -> str:
         return "Battleship is down !"
 
 
 class Destroyer(Ship):
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(4)
 
-    def bye_bye(self):
+    def bye_bye(self) -> str:
         return "Destroyer is down !"
 
 
 class Ocean:
 
-    def __init__(self, size):
+    def __init__(self, size: int) -> None:
         self.size = size
         self.ships = []
 
-    def attack(self, x, y):
+    def attack(self, x: int, y: int) -> bool:
         for ship in self.ships:
             if ship.hit(x, y):
                 if not ship.is_ship_still_alive():
@@ -95,7 +95,7 @@ class Ocean:
 
         return False
 
-    def add_ship(self, ship, x, y, is_horizontal):
+    def add_ship(self, ship: Ship, x: int, y: int, is_horizontal: bool) -> bool:
 
         if is_horizontal and x + ship.squares >= self.size:
             logging.debug("No place for the ship horizontally: {} {}".format(x, y))
@@ -119,27 +119,27 @@ class Ocean:
 
 
 class Grid:
-    def __init__(self, size):
+    def __init__(self, size: int) -> None:
         self.matrix = [[0] * size for _ in range(size)]
 
-    def hit(self, x, y):
+    def hit(self, x: int, y: int):
         self.matrix[y][x] = 1
 
-    def miss(self, x, y):
+    def miss(self, x: int, y: int):
         self.matrix[y][x] = -1
 
-    def print(self):
+    def print(self) -> None:
         pprint.pprint(self.matrix)
 
 
 class Game:
 
-    def __init__(self, size):
+    def __init__(self, size: int) -> None:
         self.size = size
         self.ocean = Ocean(size)
         self.grid = Grid(size)
 
-    def add_ship_randomly(self, ship):
+    def add_ship_randomly(self, ship: Ship) -> bool:
         retries = 10
         for i in range(retries):
             x = randrange(self.size)
@@ -152,12 +152,12 @@ class Game:
         logging.warning("Cannot add ship after {} retries".format(retries))
         return False
 
-    def start(self):
+    def start(self) -> bool:
         return self.add_ship_randomly(Destroyer()) \
                and self.add_ship_randomly(Destroyer()) \
                and self.add_ship_randomly(Battleship())
 
-    def hit(self, x, y):
+    def hit(self, x: int, y: int) -> None:
         if self.ocean.attack(x, y):
             print("Hit !")
             self.grid.hit(x, y)
