@@ -175,8 +175,14 @@ if __name__ == '__main__':
     if not started:
         logging.warning("Terminated")
 
+    print(f"Welcome to the Battleship game, your grid is {grid_size}x{grid_size}")
     while started:
-        var = input("Please enter XY or end to finish: ")
-        g.hit(int(var[0]), int(var[1]))
-        if var == 'end':
+        try:
+            x, y = [int(a) for a in input("Please enter X Y or type 'end' to finish: ").split()]
+            g.hit(x, y)
+        except ValueError:
+            print("Thank you and bye bye")
             started = False
+        except:
+            print("Wrong input, try again like: 2 2")
+

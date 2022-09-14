@@ -3,7 +3,6 @@ from main import Cruiser
 
 def test_is_hit():
     # given
-    ship_size = 3
     ship = Cruiser()
 
     # when
@@ -13,7 +12,7 @@ def test_is_hit():
     ship.move(x, y, horizontal)
 
     # then
-    for dx in range(ship_size):
+    for dx in range(ship.squares):
         assert ship.is_ship_still_alive()
         assert ship.hit(x + dx, y)
 
