@@ -98,11 +98,11 @@ class Ocean:
     def add_ship(self, ship: Ship, x: int, y: int, is_horizontal: bool) -> bool:
 
         if is_horizontal and x + ship.squares >= self.size:
-            logging.debug("No place for the ship horizontally: {} {}".format(x, y))
+            logging.debug(f"No place for the ship horizontally: {x} {y}")
             return False
 
         if not is_horizontal and y + ship.squares >= self.size:
-            logging.debug("No place for the ship vertically: {} {}".format(x, y))
+            logging.debug(f"No place for the ship vertically: {x} {y}")
             return False
 
         ship.move(x, y, is_horizontal)
@@ -146,10 +146,10 @@ class Game:
             y = randrange(self.size)
             is_horizontal = choice([True, False])
             if self.ocean.add_ship(ship, x, y, is_horizontal):
-                logging.debug("Ship moved at {}, {}".format(x, y))
+                logging.debug(f"Ship moved at {x}, {y}")
                 return True
 
-        logging.warning("Cannot add ship after {} retries".format(retries))
+        logging.warning(f"Cannot add ship after {retries} retries")
         return False
 
     def start(self) -> bool:
